@@ -34,7 +34,7 @@ async function run() {
     app.get("/course/:category", async (req, res) => {
       const category = req.params.category;
       const query = { category: category };
-      const result = await coursesCollection.findOne(query).toArray();
+      const result = await coursesCollection.findOne(query);
       res.send(result);
     });
 
