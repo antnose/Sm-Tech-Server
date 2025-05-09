@@ -31,7 +31,13 @@ async function run() {
 
     const coursesCollection = client.db("SMTech").collection("courses");
 
-    // Get Course Data from Database
+    // Get All Course Data from Database
+    app.get("/course", async (req, res) => {
+      const result = await coursesCollection.find().toArray();
+      res.send(result);
+    });
+
+    // Get specific Course Data from Database
     app.get("/course/:category", async (req, res) => {
       const category = req.params.category;
       const query = { category: category };
