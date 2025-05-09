@@ -29,26 +29,13 @@ async function run() {
     // await client.connect();
     // Send a ping to confirm a successful connection
 
-    const coursesCollection = client.db("SM Tech").collection("courses");
+    const coursesCollection = client.db("SMTech").collection("courses");
 
-    app.get("/electrical", async (req, res) => {
-      res.send("This is electrical Department");
-    });
-
-    app.get("/mechanical", async (req, res) => {
-      res.send("This is mechanical Department");
-    });
-
-    app.get("/civil", async (req, res) => {
-      res.send("This is civil Department");
-    });
-
-    app.get("/computer", async (req, res) => {
-      res.send("This is computer Department");
-    });
-
-    app.get("/textile", async (req, res) => {
-      res.send("This is textile Department");
+    app.get("/course/:category", async (req, res) => {
+      const category = req.params.category;
+      const query = { category: category };
+      const result = await coursesCollection.findOne(query).toArray();
+      res.send(result);
     });
 
     await client.db("admin").command({ ping: 1 });
