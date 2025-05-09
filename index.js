@@ -31,10 +31,46 @@ async function run() {
 
     const coursesCollection = client.db("SMTech").collection("courses");
 
+    // Get Course Data from Database
     app.get("/course/:category", async (req, res) => {
       const category = req.params.category;
       const query = { category: category };
       const result = await coursesCollection.findOne(query);
+      res.send(result);
+    });
+
+    // Create a course in Database
+    app.post("/course", async (req, res) => {
+      const courseData = req.params;
+      console.log(courseData);
+      const result = await courseData.insertOne(courseData);
+      res.send(result);
+    });
+
+    // Update course details in Database
+    app.put("/course/:category", async (req, res) => {
+      const category = req.params.category;
+      const courseData = req.body;
+      const query = { category: category };
+      const options = { upsert: true };
+      const updateDoc = {
+        $set: {
+          ...courseData,
+        },
+      };
+      const result = await coursesCollection.updateOne(
+        query,
+        updateDoc,
+        options
+      );
+      res.send(result);
+    });
+
+    // Delete course from Database
+    app.delete("/course/:category", async (req, res) => {
+      const category = req.params.category;
+      const query = { category: category };
+      const result = await coursesCollection.deleteOne(query);
       res.send(result);
     });
 
