@@ -28,6 +28,29 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     // await client.connect();
     // Send a ping to confirm a successful connection
+
+    const coursesCollection = client.db("SM Tech").collection("courses");
+
+    app.get("/electrical", async (req, res) => {
+      res.send("This is electrical Department");
+    });
+
+    app.get("/mechanical", async (req, res) => {
+      res.send("This is mechanical Department");
+    });
+
+    app.get("/civil", async (req, res) => {
+      res.send("This is civil Department");
+    });
+
+    app.get("/computer", async (req, res) => {
+      res.send("This is computer Department");
+    });
+
+    app.get("/textile", async (req, res) => {
+      res.send("This is textile Department");
+    });
+
     await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
