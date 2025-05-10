@@ -11,8 +11,7 @@ app.use(cors());
 app.use(express.json());
 app.use(morgan("dev"));
 
-const uri =
-  `mongodb+srv://${process.env.USER_DB}:${process.env.USER_PASS}@cluster0.to58y.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
+const uri = `mongodb+srv://${process.env.USER_DB}:${process.env.USER_PASS}@cluster0.to58y.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
@@ -47,9 +46,9 @@ async function run() {
 
     // Create a course in Database
     app.post("/course", async (req, res) => {
-      const courseData = req.params;
+      const courseData = req.body;
       console.log(courseData);
-      const result = await courseData.insertOne(courseData);
+      const result = await coursesCollection.insertOne(courseData);
       res.send(result);
     });
 
