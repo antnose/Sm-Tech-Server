@@ -47,9 +47,9 @@ async function run() {
 
     // Create a course in Database
     app.post("/course", async (req, res) => {
-      const courseData = req.params;
+      const courseData = req.body;
       console.log(courseData);
-      const result = await courseData.insertOne(courseData);
+      const result = await coursesCollection.insertOne(courseData);
       res.send(result);
     });
 
