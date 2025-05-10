@@ -1,4 +1,4 @@
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
@@ -37,9 +37,9 @@ async function run() {
     });
 
     // Get specific Course Data from Database
-    app.get("/course/:category", async (req, res) => {
-      const category = req.params.category;
-      const query = { category: category };
+    app.get("/course/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
       const result = await coursesCollection.findOne(query);
       res.send(result);
     });
@@ -53,7 +53,7 @@ async function run() {
     });
 
     // Update course details in Database
-    app.put("/course/:category", async (req, res) => {
+    app.put("/course/:id", async (req, res) => {
       const category = req.params.category;
       const courseData = req.body;
       const query = { category: category };
@@ -72,7 +72,7 @@ async function run() {
     });
 
     // Delete course from Database
-    app.delete("/course/:category", async (req, res) => {
+    app.delete("/course/:id", async (req, res) => {
       const category = req.params.category;
       const query = { category: category };
       const result = await coursesCollection.deleteOne(query);
