@@ -27,9 +27,29 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     // await client.connect();
     // Send a ping to confirm a successful connection
-
+    
     const coursesCollection = client.db("SMTech").collection("courses");
     const departmentCollection = client.db("SMTech").collection("department");
+    const userCollection = client.db("SMTech").collection("user");
+
+    // save data in db
+    app.post('/users/:email',async(req,res)=>{
+      const email = req.params.email;
+      const query = {email}
+      const user = req.body;
+      const isExist = await userCollection.findOne(query)
+      if(isExist){
+        return res.send(isExist)
+      }
+      const result = await userCollection.insertOne({
+        ...user,
+        role:"student"
+      })
+      res.send(result)
+
+    })
+
+
 
     // Get All Course Data from Database
     app.get("/course", async (req, res) => {
