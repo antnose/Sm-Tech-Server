@@ -29,6 +29,7 @@ async function run() {
     // Send a ping to confirm a successful connection
 
     const coursesCollection = client.db("SMTech").collection("courses");
+    const departmentCollection = client.db("SMTech").collection("department");
 
     // Get All Course Data from Database
     app.get("/course", async (req, res) => {
@@ -44,6 +45,13 @@ async function run() {
       res.send(result);
     });
 
+    // get all departments
+    app.get('/department',async(req,res)=>{
+      const result = await departmentCollection.find().toArray()
+      res.send(result)
+    })
+
+
     // Create a course in Database
     app.post("/course", async (req, res) => {
       const courseData = req.body;
@@ -51,6 +59,14 @@ async function run() {
       const result = await coursesCollection.insertOne(courseData);
       res.send(result);
     });
+
+    // Create a Department
+    app.post("/department",async(req,res)=>{
+      const departmentData = req.body;
+      const result = await departmentCollection.insertOne(departmentData)
+      res.send(result)
+    })
+
 
     // Update course details in Database
     app.put("/course/:id", async (req, res) => {
