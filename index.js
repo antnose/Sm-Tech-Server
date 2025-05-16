@@ -1,4 +1,6 @@
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+const sgMail = require("@sendgrid/mail");
+
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
@@ -8,10 +10,12 @@ const morgan = require("morgan");
 const jwt = require("jsonwebtoken");
 const cookieParser = require("cookie-parser");
 
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
 const corsOptions = {
-  origin: ["http://localhost:5173", "http://localhost:5174"],
-  credentials: true,
-  optionSuccessStatus: 200,
+    origin: ["http://localhost:5173", "http://localhost:5174"],
+    credentials: true,
+    optionSuccessStatus: 200,
 };
 
 // All Middleware here
@@ -20,178 +24,222 @@ app.use(express.json());
 app.use(morgan("dev"));
 app.use(cookieParser());
 
-const verifyToken = async (req, res, next) => {
-  const token = req.cookies?.token;
 
-  if (!token) {
-    return res.status(401).send({ message: "unauthorized access" });
-  }
-  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
-    if (err) {
-      console.log(err);
-      return res.status(401).send({ message: "unauthorized access" });
+
+const verifyToken = async (req, res, next) => {
+    const token = req.cookies?.token;
+
+    if (!token) {
+        return res.status(401).send({ message: "unauthorized access" });
     }
-    req.user = decoded;
-    next();
-  });
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+        if (err) {
+            console.log(err);
+            return res.status(401).send({ message: "unauthorized access" });
+        }
+        req.user = decoded;
+        next();
+    });
 };
 
 const uri = `mongodb+srv://${process.env.USER_DB}:${process.env.USER_PASS}@cluster0.to58y.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
-  serverApi: {
-    version: ServerApiVersion.v1,
-    strict: true,
-    deprecationErrors: true,
-  },
+    serverApi: {
+        version: ServerApiVersion.v1,
+        strict: true,
+        deprecationErrors: true,
+    },
 });
 
 async function run() {
-  try {
-    // Connect the client to the server	(optional starting in v4.7)
-    // await client.connect();
-    // Send a ping to confirm a successful connection
+    try {
+        // Connect the client to the server	(optional starting in v4.7)
+        // Send a ping to confirm a successful connection
+        await client.connect();
 
-    const coursesCollection = client.db("SMTech").collection("courses");
-    const departmentCollection = client.db("SMTech").collection("department");
-    const userCollection = client.db("SMTech").collection("user");
+        // ------------------SendGrid start ------------------
+        // Contact endpoint
+app.post("/api/contact", async (req, res) => {
+    try {
+        const { name, email, subject, message } = req.body;
 
-    // verify admin middleware
-    const verifyAdmin = async (req, res, next) => {
-      const email = req.user?.email;
-      const query = { email };
-      const result = await userCollection.findOne(query);
-      if (!result || result?.role !== "admin")
-        return res
-          .status(403)
-          .send({ message: "forbidden access ! admin only action" });
+        // Basic validation
+        if (!name || !email || !message) {
+            return res
+                .status(400)
+                .json({ error: "Name, email, and message are required" });
+        }
 
-      next();
-    };
+        const msg = {
+            to: process.env.TO_EMAIL,
+            from: process.env.FROM_EMAIL,
+            replyTo: email,
+            subject: subject || `New message from ${name}`,
+            text: `Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`,
+            html: `
+        <div style="font-family: Arial; max-width: 600px;">
+          <h2 style="color: #07a698;">New Contact Form Submission</h2>
+          <p><strong>From:</strong> ${name} (${email})</p>
+          <p><strong>Message:</strong></p>
+          <div style="padding: 10px; background: #f5f5f5;">
+            <p style="white-space: pre-line;">${message}</p>
+          </div>
+        </div>
+      `,
+        };
 
-    // auth related apis
-    app.post("/jwt", async (req, res) => {
-      const email = req.body;
-      const token = jwt.sign(email, process.env.ACCESS_TOKEN_SECRET, {
-        expiresIn: "365d",
-      });
-      res
-        .cookie("token", token, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
-        })
-        .send({ success: true });
-    });
-    // logout
-    app.get("/logout", async (req, res) => {
-      try {
-        res
-          .clearCookie("token", {
-            maxAge: 0,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
-          })
-          .send({ success: true });
-      } catch (err) {
-        res.status(500).send(err);
-      }
-    });
+        await sgMail.send(msg);
+        res.json({ success: true, message: "Email sent successfully!" });
+    } catch (error) {
+        console.error("SendGrid error:", error.response?.body || error);
+        res.status(500).json({ error: "Failed to send message" });
+    }
+});
+        //----------------  SendGrid End ----------------- 
 
-    // save user data in db
-    app.post("/users/:email", async (req, res) => {
-      const email = req.params.email;
-      const query = { email };
-      const user = req.body;
-      const isExist = await userCollection.findOne(query);
-      if (isExist) {
-        return res.send(isExist);
-      }
-      const result = await userCollection.insertOne({
-        ...user,
-        role: "student",
-      });
-      res.send(result);
-    });
+        const coursesCollection = client.db("SMTech").collection("courses");
+        const departmentCollection = client
+            .db("SMTech")
+            .collection("department");
+        const userCollection = client.db("SMTech").collection("user");
 
-    // Get All Course Data from Database
-    app.get("/course", async (req, res) => {
-      const result = await coursesCollection.find().toArray();
-      res.send(result);
-    });
+        // verify admin middleware
+        const verifyAdmin = async (req, res, next) => {
+            const email = req.user?.email;
+            const query = { email };
+            const result = await userCollection.findOne(query);
+            if (!result || result?.role !== "admin")
+                return res
+                    .status(403)
+                    .send({ message: "forbidden access ! admin only action" });
 
-    // Get specific Course Data from Database
-    app.get("/course/:id", async (req, res) => {
-      const id = req.params.id;
-      const query = { _id: new ObjectId(id) };
-      const result = await coursesCollection.findOne(query);
-      res.send(result);
-    });
+            next();
+        };
 
-    // get all departments
-    app.get("/department", async (req, res) => {
-      const result = await departmentCollection.find().toArray();
-      res.send(result);
-    });
+        // auth related apis
+        app.post("/jwt", async (req, res) => {
+            const email = req.body;
+            const token = jwt.sign(email, process.env.ACCESS_TOKEN_SECRET, {
+                expiresIn: "365d",
+            });
+            res.cookie("token", token, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === "production",
+                sameSite:
+                    process.env.NODE_ENV === "production" ? "none" : "strict",
+            }).send({ success: true });
+        });
+        // logout
+        app.get("/logout", async (req, res) => {
+            try {
+                res.clearCookie("token", {
+                    maxAge: 0,
+                    secure: process.env.NODE_ENV === "production",
+                    sameSite:
+                        process.env.NODE_ENV === "production"
+                            ? "none"
+                            : "strict",
+                }).send({ success: true });
+            } catch (err) {
+                res.status(500).send(err);
+            }
+        });
 
-    // Create a course in Database
-    app.post("/course", async (req, res) => {
-      const courseData = req.body;
-      console.log(courseData);
-      const result = await coursesCollection.insertOne(courseData);
-      res.send(result);
-    });
+        // save user data in db
+        app.post("/users/:email", async (req, res) => {
+            const email = req.params.email;
+            const query = { email };
+            const user = req.body;
+            const isExist = await userCollection.findOne(query);
+            if (isExist) {
+                return res.send(isExist);
+            }
+            const result = await userCollection.insertOne({
+                ...user,
+                role: "student",
+            });
+            res.send(result);
+        });
 
-    // Create a Department
-    app.post("/department", async (req, res) => {
-      const departmentData = req.body;
-      const result = await departmentCollection.insertOne(departmentData);
-      res.send(result);
-    });
+        // Get All Course Data from Database
+        app.get("/course", async (req, res) => {
+            const result = await coursesCollection.find().toArray();
+            res.send(result);
+        });
 
-    // Update course details in Database
-    app.put("/course/:id", async (req, res) => {
-      const category = req.params.category;
-      const courseData = req.body;
-      const query = { category: category };
-      const options = { upsert: true };
-      const updateDoc = {
-        $set: {
-          ...courseData,
-        },
-      };
-      const result = await coursesCollection.updateOne(
-        query,
-        updateDoc,
-        options
-      );
-      res.send(result);
-    });
+        // Get specific Course Data from Database
+        app.get("/course/:id", async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await coursesCollection.findOne(query);
+            res.send(result);
+        });
 
-    // Delete course from Database
-    app.delete("/course/:id", async (req, res) => {
-      const id = req.params.id;
-      const query = { _id: new ObjectId(id) };
-      const result = await coursesCollection.deleteOne(query);
-      res.send(result);
-    });
+        // get all departments
+        app.get("/department", async (req, res) => {
+            const result = await departmentCollection.find().toArray();
+            res.send(result);
+        });
 
-    await client.db("admin").command({ ping: 1 });
-    console.log(
-      "Pinged your deployment. You successfully connected to MongoDB!"
-    );
-  } finally {
-    // Ensures that the client will close when you finish/error
-    // await client.close();
-  }
+        // Create a course in Database
+        app.post("/course", async (req, res) => {
+            const courseData = req.body;
+            console.log(courseData);
+            const result = await coursesCollection.insertOne(courseData);
+            res.send(result);
+        });
+
+        // Create a Department
+        app.post("/department", async (req, res) => {
+            const departmentData = req.body;
+            const result = await departmentCollection.insertOne(departmentData);
+            res.send(result);
+        });
+
+        // Update course details in Database
+        app.put("/course/:id", async (req, res) => {
+            const category = req.params.category;
+            const courseData = req.body;
+            const query = { category: category };
+            const options = { upsert: true };
+            const updateDoc = {
+                $set: {
+                    ...courseData,
+                },
+            };
+            const result = await coursesCollection.updateOne(
+                query,
+                updateDoc,
+                options
+            );
+            res.send(result);
+        });
+
+        // Delete course from Database
+        app.delete("/course/:id", async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await coursesCollection.deleteOne(query);
+            res.send(result);
+        });
+
+        await client.db("admin").command({ ping: 1 });
+        console.log(
+            "Pinged your deployment. You successfully connected to MongoDB!"
+        );
+    } finally {
+        // Ensures that the client will close when you finish/error
+        // await client.close();
+    }
 }
 run().catch(console.dir);
 
 app.get("/", (req, res) => {
-  res.send("Hello from SM TECH Server");
+    res.send("Hello from SM TECH Server");
 });
 
 app.listen(port, () => {
-  console.log("SM Tech is Running on port : ", port);
+    console.log("SM Tech is Running on port : ", port);
 });
