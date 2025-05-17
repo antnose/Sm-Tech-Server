@@ -13,7 +13,7 @@ const cookieParser = require("cookie-parser");
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 const corsOptions = {
-    origin: ["http://localhost:5173", "http://localhost:5174"],
+    origin: ["http://localhost:5173", "http://localhost:5174", "https://sm-tech-1.netlify.app"],
     credentials: true,
     optionSuccessStatus: 200,
 };
@@ -166,6 +166,15 @@ async function run() {
             });
             res.send(result);
         });
+         app.get("/users/role/:email", async (req, res) => {
+            const email = req.params.email;
+            const query = { email: email };
+            const result = await userCollection.findOne(query);
+            res.send({ role: result?.role });
+        });
+
+
+
 
         // Get All Course Data from Database
         app.get("/course", async (req, res) => {
@@ -194,7 +203,7 @@ async function run() {
             res.send(result);
         });
         // Create a course in Database
-        app.post("/course", async (req, res) => {
+        app.post("/course",verifyToken,verifyAdmin, async (req, res) => {
             const courseData = req.body;
             console.log(courseData);
             const result = await coursesCollection.insertOne(courseData);
@@ -202,14 +211,14 @@ async function run() {
         });
 
         // Create a Department
-        app.post("/department", async (req, res) => {
+        app.post("/department", verifyToken,verifyAdmin, async (req, res) => {
             const departmentData = req.body;
             const result = await departmentCollection.insertOne(departmentData);
             res.send(result);
         });
 
         // Update course details in Database
-        app.put("/updateCourse/:id", async (req, res) => {
+        app.put("/updateCourse/:id",verifyToken,verifyAdmin, async (req, res) => {
             const id = req.params.id;
             const courseData = req.body;
             const query = { _id: new ObjectId(id) };
@@ -228,7 +237,7 @@ async function run() {
         });
 
         // Update Department
-        app.put('/updateDepartment/:id',async(req,res)=>{
+        app.put('/updateDepartment/:id',verifyToken,verifyAdmin,async(req,res)=>{
             const updateData = req.body;
             const id = req.params.id;
             const query = {_id: new ObjectId(id)}
@@ -243,7 +252,7 @@ async function run() {
         })
 
         // Delete course from Database
-        app.delete("/course/:id", async (req, res) => {
+        app.delete("/course/:id",verifyToken,verifyAdmin, async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
             const result = await coursesCollection.deleteOne(query);
@@ -251,7 +260,7 @@ async function run() {
         });
         
         // Delete Department from Database
-        app.delete("/department/:id", async (req, res) => {
+        app.delete("/department/:id",verifyToken,verifyAdmin, async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
             const result = await departmentCollection.deleteOne(query);
