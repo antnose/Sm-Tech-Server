@@ -24,8 +24,6 @@ app.use(express.json());
 app.use(morgan("dev"));
 app.use(cookieParser());
 
-
-
 const verifyToken = async (req, res, next) => {
     const token = req.cookies?.token;
 
@@ -61,24 +59,26 @@ async function run() {
 
         // ------------------SendGrid start ------------------
         // Contact endpoint
-app.post("/api/contact", async (req, res) => {
-    try {
-        const { name, email, subject, message } = req.body;
+        app.post("/api/contact", async (req, res) => {
+            try {
+                const { name, email, subject, message } = req.body;
 
-        // Basic validation
-        if (!name || !email || !message) {
-            return res
-                .status(400)
-                .json({ error: "Name, email, and message are required" });
-        }
+                // Basic validation
+                if (!name || !email || !message) {
+                    return res
+                        .status(400)
+                        .json({
+                            error: "Name, email, and message are required",
+                        });
+                }
 
-        const msg = {
-            to: process.env.TO_EMAIL,
-            from: process.env.FROM_EMAIL,
-            replyTo: email,
-            subject: subject || `New message from ${name}`,
-            text: `Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`,
-            html: `
+                const msg = {
+                    to: process.env.TO_EMAIL,
+                    from: process.env.FROM_EMAIL,
+                    replyTo: email,
+                    subject: subject || `New message from ${name}`,
+                    text: `Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`,
+                    html: `
         <div style="font-family: Arial; max-width: 600px;">
           <h2 style="color: #07a698;">New Contact Form Submission</h2>
           <p><strong>From:</strong> ${name} (${email})</p>
@@ -88,17 +88,21 @@ app.post("/api/contact", async (req, res) => {
           </div>
         </div>
       `,
-        };
+                };
 
-        await sgMail.send(msg);
-        res.json({ success: true, message: "Email sent successfully!" });
-    } catch (error) {
-        console.error("SendGrid error:", error.response?.body || error);
-        res.status(500).json({ error: "Failed to send message" });
-    }
-});
-        //----------------  SendGrid End ----------------- 
+                await sgMail.send(msg);
+                res.json({
+                    success: true,
+                    message: "Email sent successfully!",
+                });
+            } catch (error) {
+                console.error("SendGrid error:", error.response?.body || error);
+                res.status(500).json({ error: "Failed to send message" });
+            }
+        });
+        //----------------  SendGrid End -----------------
 
+        // -------------------- DB Collection ---------------
         const coursesCollection = client.db("SMTech").collection("courses");
         const departmentCollection = client
             .db("SMTech")
@@ -118,8 +122,8 @@ app.post("/api/contact", async (req, res) => {
             next();
         };
 
-        // auth related apis
-        app.post("/jwt", async (req, res) => {
+        // auth related apis 
+        app.post("/jwt", async (req, res) => { 
             const email = req.body;
             const token = jwt.sign(email, process.env.ACCESS_TOKEN_SECRET, {
                 expiresIn: "365d",
@@ -176,13 +180,19 @@ app.post("/api/contact", async (req, res) => {
             const result = await coursesCollection.findOne(query);
             res.send(result);
         });
-
+        
         // get all departments
         app.get("/department", async (req, res) => {
             const result = await departmentCollection.find().toArray();
             res.send(result);
         });
-
+        
+        app.get("/department/:id", async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await departmentCollection.findOne(query);
+            res.send(result);
+        });
         // Create a course in Database
         app.post("/course", async (req, res) => {
             const courseData = req.body;
@@ -199,10 +209,10 @@ app.post("/api/contact", async (req, res) => {
         });
 
         // Update course details in Database
-        app.put("/course/:id", async (req, res) => {
-            const category = req.params.category;
+        app.put("/updateCourse/:id", async (req, res) => {
+            const id = req.params.id;
             const courseData = req.body;
-            const query = { category: category };
+            const query = { _id: new ObjectId(id) };
             const options = { upsert: true };
             const updateDoc = {
                 $set: {
@@ -217,6 +227,21 @@ app.post("/api/contact", async (req, res) => {
             res.send(result);
         });
 
+        // Update Department
+        app.put('/updateDepartment/:id',async(req,res)=>{
+            const updateData = req.body;
+            const id = req.params.id;
+            const query = {_id: new ObjectId(id)}
+            const options = { upsert: true };
+            const updateDoc = {
+                $set:{
+                    ...updateData
+                }
+            }
+            const result = await departmentCollection.updateOne(query,updateDoc,options)
+            res.send(result)
+        })
+
         // Delete course from Database
         app.delete("/course/:id", async (req, res) => {
             const id = req.params.id;
@@ -224,6 +249,15 @@ app.post("/api/contact", async (req, res) => {
             const result = await coursesCollection.deleteOne(query);
             res.send(result);
         });
+        
+        // Delete Department from Database
+        app.delete("/department/:id", async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await departmentCollection.deleteOne(query);
+            res.send(result);
+        });
+
 
         await client.db("admin").command({ ping: 1 });
         console.log(
