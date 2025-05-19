@@ -378,6 +378,21 @@ async function run() {
       res.send(result);
     });
 
+    // get student based on search
+    app.get("/stu/:studentId", async (req, res) => {
+      const studentId = req.params.studentId;
+
+      const result = await studentCollection.findOne({
+        studentId: studentId, // <-- searches by `studentId` field
+      });
+
+      if (!result) {
+        return res.status(404).json({ message: "Student not found" });
+      }
+
+      res.json(result);
+    });
+
     // Delete A Student in db
     app.delete("/student/:id", async (req, res) => {
       const id = req.params.id;
