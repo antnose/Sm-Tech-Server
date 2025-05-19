@@ -109,6 +109,7 @@ async function run() {
     const departmentCollection = client.db("SMTech").collection("department");
     const userCollection = client.db("SMTech").collection("user");
     const studentCollection = client.db("SMTech").collection("students");
+    const teacherCollection = client.db("SMTech").collection("teacher");
 
     // verify admin middleware
     const verifyAdmin = async (req, res, next) => {
@@ -214,6 +215,17 @@ async function run() {
       const result = await departmentCollection.insertOne(departmentData);
       res.send(result);
     });
+    // Add Teacher 
+    app.post('/teachers',verifyToken,verifyAdmin,async(req,res) =>{
+      const teacherData = req.body;
+      const result = await teacherCollection.insertOne(teacherData)
+      res.send(result)
+    })
+    // Get Teacher 
+    app.get('/teachers',async(req,res)=>{
+      const result = await teacherCollection.find().toArray()
+      res.send(result)
+    })
 
     // Update course details in Database
     app.put("/updateCourse/:id", verifyToken, verifyAdmin, async (req, res) => {
