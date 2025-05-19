@@ -180,6 +180,13 @@ async function run() {
       const result = await coursesCollection.find().toArray();
       res.send(result);
     });
+    // get course category wise 
+    app.get('/course/:category',async(req,res)=>{
+      const category = req.params.category;
+      const query = {category: category}
+      const result = await coursesCollection.find(query).toArray()
+      res.send(result)
+    })
 
     // Get specific Course Data from Database
     app.get("/course/:id", async (req, res) => {
@@ -215,17 +222,17 @@ async function run() {
       const result = await departmentCollection.insertOne(departmentData);
       res.send(result);
     });
-    // Add Teacher 
-    app.post('/teachers',verifyToken,verifyAdmin,async(req,res) =>{
+    // Add Teacher
+    app.post("/teachers", verifyToken, verifyAdmin, async (req, res) => {
       const teacherData = req.body;
-      const result = await teacherCollection.insertOne(teacherData)
-      res.send(result)
-    })
-    // Get Teacher 
-    app.get('/teachers',async(req,res)=>{
-      const result = await teacherCollection.find().toArray()
-      res.send(result)
-    })
+      const result = await teacherCollection.insertOne(teacherData);
+      res.send(result);
+    });
+    // Get Teacher
+    app.get("/teachers", async (req, res) => {
+      const result = await teacherCollection.find().toArray();
+      res.send(result);
+    });
 
     // Update course details in Database
     app.put("/updateCourse/:id", verifyToken, verifyAdmin, async (req, res) => {
@@ -290,13 +297,13 @@ async function run() {
         res.send(result);
       }
     );
-    // Delete Specific Teacher 
-    app.delete('/teachers/:id',async(req,res)=>{
+    // Delete Specific Teacher
+    app.delete("/teachers/:id", async (req, res) => {
       const id = req.params.id;
-      const query = {_id: new ObjectId(id)}
-      const result = await teacherCollection.deleteOne(query)
-      res.send(result)
-    })
+      const query = { _id: new ObjectId(id) };
+      const result = await teacherCollection.deleteOne(query);
+      res.send(result);
+    });
 
     // Student Part Start
     app.post("/student", async (req, res) => {
