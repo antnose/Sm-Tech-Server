@@ -328,6 +328,33 @@ async function run() {
       res.send(result);
     });
 
+    // Get A Specific student using id
+    app.get("/student/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await studentCollection.findOne(query);
+      res.send(result);
+    });
+
+    // Update a Student Info in db
+    app.put("/student/:id", async (req, res) => {
+      const id = req.params.id;
+      const studentData = req.body;
+      const query = { _id: new ObjectId(id) };
+      const options = { upsert: true };
+      const updateDoc = {
+        $set: {
+          ...studentData,
+        },
+      };
+      const result = await studentCollection.updateOne(
+        query,
+        updateDoc,
+        options
+      );
+      res.send(result);
+    });
+
     await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
