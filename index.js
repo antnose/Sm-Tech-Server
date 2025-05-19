@@ -180,13 +180,13 @@ async function run() {
       const result = await coursesCollection.find().toArray();
       res.send(result);
     });
-    // get course category wise 
-    app.get('/course/:category',async(req,res)=>{
+    // get course category wise
+    app.get("/course/:category", async (req, res) => {
       const category = req.params.category;
-      const query = {category: category}
-      const result = await coursesCollection.find(query).toArray()
-      res.send(result)
-    })
+      const query = { category: category };
+      const result = await coursesCollection.find(query).toArray();
+      res.send(result);
+    });
 
     // Get specific Course Data from Database
     app.get("/course/:id", async (req, res) => {
@@ -306,11 +306,28 @@ async function run() {
     });
 
     // Student Part Start
+
+    // Get All student from db
+    app.get("/student", async (req, res) => {
+      const result = await studentCollection.find().toArray();
+      res.send(result);
+    });
+
+    // Add A student in db
     app.post("/student", async (req, res) => {
       const studentData = req.body;
       const result = await studentCollection.insertOne(studentData);
       res.send(result);
     });
+
+    // Delete A Student in db
+    app.delete("/student/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await studentCollection.deleteOne(query);
+      res.send(result);
+    });
+
     await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
