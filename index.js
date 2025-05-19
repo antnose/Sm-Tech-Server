@@ -164,10 +164,41 @@ async function run() {
       }
       const result = await userCollection.insertOne({
         ...user,
-        role: "student",
+        role: "user",
       });
       res.send(result);
     });
+    // get all user
+    app.get("/users", async (req, res) => {
+      const result = await userCollection.find().toArray();
+      res.send(result);
+    });
+    // update User Role
+    app.patch("/users/:id/role", async (req, res) => {
+      const id = req.params.id;
+      const newRole = req.body.role;
+
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = { $set: { role: newRole } };
+
+      try {
+        const result = await userCollection.updateOne(filter, updateDoc);
+        if (result.modifiedCount > 0) {
+          res.send({ success: true });
+        } else {
+          res.status(400).send({
+            success: false,
+            message: "Role update failed",
+          });
+        }
+      } catch (error) {
+        res.status(500).send({
+          success: false,
+          message: error.message,
+        });
+      }
+    });
+
     app.get("/users/role/:email", async (req, res) => {
       const email = req.params.email;
       const query = { email: email };
@@ -313,22 +344,7 @@ async function run() {
       res.send(result);
     });
 
-    // Add A student in db
-    app.post("/student", async (req, res) => {
-      const studentData = req.body;
-      const result = await studentCollection.insertOne(studentData);
-      res.send(result);
-    });
-
-    // Delete A Student in db
-    app.delete("/student/:id", async (req, res) => {
-      const id = req.params.id;
-      const query = { _id: new ObjectId(id) };
-      const result = await studentCollection.deleteOne(query);
-      res.send(result);
-    });
-
-    // Get A Specific student using id
+    // Get a specific student from db
     app.get("/student/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
@@ -336,7 +352,14 @@ async function run() {
       res.send(result);
     });
 
-    // Update a Student Info in db
+    // Add A student in db
+    app.post("/student", async (req, res) => {
+      const studentData = req.body;
+      const result = await studentCollection.insertOne(studentData);
+      res.send(result);
+    });
+
+    // Update Student Info
     app.put("/student/:id", async (req, res) => {
       const id = req.params.id;
       const studentData = req.body;
@@ -352,6 +375,14 @@ async function run() {
         updateDoc,
         options
       );
+      res.send(result);
+    });
+
+    // Delete A Student in db
+    app.delete("/student/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await studentCollection.deleteOne(query);
       res.send(result);
     });
 
