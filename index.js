@@ -290,6 +290,13 @@ async function run() {
         res.send(result);
       }
     );
+    // Delete Specific Teacher 
+    app.delete('/teachers/:id',async(req,res)=>{
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)}
+      const result = await teacherCollection.deleteOne(query)
+      res.send(result)
+    })
 
     // Student Part Start
     app.post("/student", async (req, res) => {
