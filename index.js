@@ -154,7 +154,8 @@ async function run() {
     });
 
     // save user data in db
-    app.post("/users/:email", async (req, res) => {
+    app.post("/users/:email",verifyToken, async (req, res) => {
+        
       const email = req.params.email;
       const query = { email };
       const user = req.body;
@@ -169,12 +170,12 @@ async function run() {
       res.send(result);
     });
     // get all user
-    app.get("/users", async (req, res) => {
+    app.get("/users",verifyToken,verifyAdmin, async (req, res) => {
       const result = await userCollection.find().toArray();
       res.send(result);
     });
     // update User Role
-    app.patch("/users/:id/role", async (req, res) => {
+    app.patch("/users/:id/role",verifyToken,verifyAdmin, async (req, res) => {
       const id = req.params.id;
       const newRole = req.body.role;
 
@@ -199,7 +200,8 @@ async function run() {
       }
     });
 
-    app.get("/users/role/:email", async (req, res) => {
+    app.get("/users/role/:email",verifyToken, async (req, res) => {
+      
       const email = req.params.email;
       const query = { email: email };
       const result = await userCollection.findOne(query);
@@ -349,7 +351,7 @@ async function run() {
       }
     );
     // Delete Specific Teacher
-    app.delete("/teachers/:id", async (req, res) => {
+    app.delete("/teachers/:id",verifyToken,verifyAdmin, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await teacherCollection.deleteOne(query);
@@ -373,14 +375,14 @@ async function run() {
     });
 
     // Add A student in db
-    app.post("/student", async (req, res) => {
+    app.post("/student",verifyToken,verifyAdmin, async (req, res) => {
       const studentData = req.body;
       const result = await studentCollection.insertOne(studentData);
       res.send(result);
     });
 
     // Update Student Info
-    app.put("/student/:id", async (req, res) => {
+    app.put("/student/:id",verifyToken,verifyAdmin, async (req, res) => {
       const id = req.params.id;
       const studentData = req.body;
       const query = { _id: new ObjectId(id) };
@@ -414,7 +416,7 @@ async function run() {
     });
 
     // Delete A Student in db
-    app.delete("/student/:id", async (req, res) => {
+    app.delete("/student/:id",verifyToken,verifyAdmin, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await studentCollection.deleteOne(query);
