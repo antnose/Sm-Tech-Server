@@ -154,7 +154,7 @@ async function run() {
     });
 
     // save user data in db
-    app.post("/users/:email",verifyToken, async (req, res) => {
+    app.post("/users/:email", async (req, res) => {
         
       const email = req.params.email;
       const query = { email };
