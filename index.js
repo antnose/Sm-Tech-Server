@@ -361,7 +361,7 @@ async function run() {
     // Student Part Start
 
     // Get All student from db
-    app.get("/student", async (req, res) => {
+    app.get("/student",verifyToken,verifyAdmin, async (req, res) => {
       const result = await studentCollection.find().toArray();
       res.send(result);
     });
