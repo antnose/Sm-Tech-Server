@@ -110,6 +110,7 @@ async function run() {
     const userCollection = client.db("SMTech").collection("user");
     const studentCollection = client.db("SMTech").collection("students");
     const teacherCollection = client.db("SMTech").collection("teacher");
+    const eventsCollection = client.db("SMTech").collection("events");
 
     // verify admin middleware
     const verifyAdmin = async (req, res, next) => {
@@ -262,6 +263,24 @@ async function run() {
       const result = await teacherCollection.insertOne(teacherData);
       res.send(result);
     });
+
+    // add events 
+    app.post("/events",verifyToken,verifyAdmin,async(req,res)=>{
+      const eventData = req.body;
+      const result = await eventsCollection.insertOne(eventData)
+      res.send(result)
+    })
+    app.get("/events",async(req,res)=>{
+      const result = await eventsCollection.find().toArray()
+      res.send(result)
+    })
+    app.delete("/events/:id",verifyToken,verifyAdmin,async(req,res)=>{
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)}
+      const result = await eventsCollection.deleteOne(query)
+      res.send(result)
+    })
+
     // Get Teacher
     app.get("/teachers", async (req, res) => {
       const result = await teacherCollection.find().toArray();
