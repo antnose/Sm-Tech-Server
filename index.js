@@ -274,6 +274,24 @@ async function run() {
       const result = await eventsCollection.find().toArray()
       res.send(result)
     })
+    // ------------- Upcoming api --------------
+    // app.get("/events/:id",async(req,res)=>{
+    //   const id = req.params.id;
+      
+    //   const query = {_id: new ObjectId(id)}
+    //   const result = await eventsCollection.findOne(query)
+    //   res.send(result)
+    // })
+    // app.patch("/events/:id",async(req,res)=>{
+    //   const id = req.params.id;
+    //   const eventsUpdate = req.body;
+    //   const filter = {_id: new ObjectId(id)}
+    //   const updateDoc = { $set: { ...eventsUpdate } };
+    //   const result = await eventsCollection.updateOne(filter,updateDoc)
+    //   res.send(result)
+
+    // })
+
     app.delete("/events/:id",verifyToken,verifyAdmin,async(req,res)=>{
       const id = req.params.id;
       const query = {_id: new ObjectId(id)}
